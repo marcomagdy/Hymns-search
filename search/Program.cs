@@ -4,6 +4,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+struct Result {
+    public string line;
+    public int score;
+}
+
+struct Cell {
+    public int score;
+    public bool isMatch;
+}
+
 class Program {
     static void Main(string[] args) {
         // Prompt user for input
@@ -69,24 +79,36 @@ class Program {
     }
 
     static int CalculateNeedlemanWunschDistance(string s, string t) {
-        int[,] d = new int[s.Length + 1, t.Length + 1];
-        for (int i = 0; i <= s.Length; i++) {
-            d[i, 0] = i;
+        Cell[,] d = new Cell[s.Length + 1, t.Length + 1];
+        d[0, 0].score = 0;
+        for (int i = 1; i <= s.Length; i++) {
+            d[i, 0].score = d[i - 1, 0].score - 1;
         }
-        for (int j = 0; j <= t.Length; j++) {
-            d[0, j] = j;
+        for (int j = 1; j <= t.Length; j++) {
+            d[0, j].score = d[0, j - 1].score - 1;
         }
         for (int j = 1; j <= t.Length; j++) {
             for (int i = 1; i <= s.Length; i++) {
-                int cost = (s[i - 1] == t[j - 1]) ? 0 : -1;
-                d[i, j] = Math.Max(Math.Max(d[i - 1, j] - 1, d[i, j - 1] - 1), d[i - 1, j - 1] + cost);
+                int score = 0;
+                int gap = -1;
+                if (s[i - 1] == t[j - 1]) {
+                    d[i, j].isMatch = true;
+                    score = 5;
+                }
+                else {
+                    d[i, j].isMatch = false;
+                }
+                // If the previous cell is a match, then we add a bonus 4x score.
+                // This gives consecutive matches a higher score than non-consecutive matches.
+                // If the previous cell is a match, but the current one is not, then we penalize that by multiplying the gap by 4.
+                if (d[i - 1, j - 1].isMatch) {
+                    score *= 3;
+                    gap *= 4;
+                }
+                d[i, j].score = Math.Max(Math.Max(d[i - 1, j].score + gap, d[i, j - 1].score + gap), d[i - 1, j - 1].score + score);
             }
         }
-        return d[s.Length, t.Length];
+        return d[s.Length, t.Length].score;
     }
 }
-
-
-
-
 
