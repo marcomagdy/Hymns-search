@@ -51,7 +51,7 @@ class Program
                     Console.WriteLine($"Top 5 matches for {searchTerm}:");
                     foreach (var similarLine in similarLines)
                     {
-                        Console.WriteLine(similarLine);
+                        Console.WriteLine($"{similarLine.line} --> Score: {similarLine.score}");
                     }
                     Console.WriteLine($"Found similar lines in {watch.ElapsedMilliseconds} ms.");
                 }
@@ -63,7 +63,7 @@ class Program
         }
     }
 
-    static List<string> FindSimilarLines(string searchTerm, List<string> lines)
+    static List<Result> FindSimilarLines(string searchTerm, List<string> lines)
     {
         var similarLines = new List<Result>();
         for (int i = 0; i < lines.Count; i++)
@@ -72,7 +72,7 @@ class Program
             similarLines.Add(new Result { line = lines[i], score = distance });
         }
         // Select Top 5 results
-        return similarLines.OrderByDescending(x => x.score).Select(x => x.line).Take(5).ToList();
+        return similarLines.OrderByDescending(x => x.score).Take(5).ToList();
     }
 
     static int CalculateNeedlemanWunschScore(string s, string t)
