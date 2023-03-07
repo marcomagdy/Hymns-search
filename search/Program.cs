@@ -40,17 +40,20 @@ class Program
                     lines.Add(line);
                 }
 
-                // Find lines that contain a word similar to the search term
+                // Record the time it takes to find similar lines
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 var similarLines = FindSimilarLines(searchTerm.ToLower(), lines);
+                watch.Stop();
 
                 // Print out the similar lines
                 if (similarLines.Any())
                 {
-                    Console.WriteLine($"Found {similarLines.Count} similar lines:");
+                    Console.WriteLine($"Top 5 matches for {searchTerm}:");
                     foreach (var similarLine in similarLines)
                     {
                         Console.WriteLine(similarLine);
                     }
+                    Console.WriteLine($"Found similar lines in {watch.ElapsedMilliseconds} ms.");
                 }
                 else
                 {
@@ -65,35 +68,14 @@ class Program
         var similarLines = new List<Result>();
         for (int i = 0; i < lines.Count; i++)
         {
-            int distance = CalculateNeedlemanWunschDistance(searchTerm, lines[i].ToLower());
+            int distance = CalculateNeedlemanWunschScore(searchTerm, lines[i].ToLower());
             similarLines.Add(new Result { line = lines[i], score = distance });
         }
-        return similarLines.OrderByDescending(x => x.score).Select(x => x.line).ToList();
+        // Select Top 5 results
+        return similarLines.OrderByDescending(x => x.score).Select(x => x.line).Take(5).ToList();
     }
 
-    static int CalculateLevenshteinDistance(string s, string t)
-    {
-        int[,] d = new int[s.Length + 1, t.Length + 1];
-        for (int i = 0; i <= s.Length; i++)
-        {
-            d[i, 0] = i;
-        }
-        for (int j = 0; j <= t.Length; j++)
-        {
-            d[0, j] = j;
-        }
-        for (int j = 1; j <= t.Length; j++)
-        {
-            for (int i = 1; i <= s.Length; i++)
-            {
-                int cost = (s[i - 1] == t[j - 1]) ? 0 : 1;
-                d[i, j] = Math.Min(Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1), d[i - 1, j - 1] + cost);
-            }
-        }
-        return d[s.Length, t.Length];
-    }
-
-    static int CalculateNeedlemanWunschDistance(string s, string t)
+    static int CalculateNeedlemanWunschScore(string s, string t)
     {
         Cell[,] d = new Cell[s.Length + 1, t.Length + 1];
         d[0, 0].score = 0;
@@ -105,9 +87,9 @@ class Program
         {
             d[0, j].score = d[0, j - 1].score - 1;
         }
-        for (int j = 1; j <= t.Length; j++)
+        for (int i = 1; i <= s.Length; i++)
         {
-            for (int i = 1; i <= s.Length; i++)
+            for (int j = 1; j <= t.Length; j++)
             {
                 int score = 0;
                 int gap = -1;
@@ -115,6 +97,8 @@ class Program
                 {
                     d[i, j].isMatch = true;
                     score = 5;
+                    // If the previous cell was a match, then we add a bonus 100 points to the score.
+                    // This gives consecutive matches a higher score than non-consecutive matches.
                     if (d[i - 1, j - 1].isMatch)
                     {
                         score += 100;
@@ -123,14 +107,13 @@ class Program
                 else
                 {
                     d[i, j].isMatch = false;
+                    // Penalize new gaps more than single linear gaps.
+                    // We determine "new" gaps by checking if the previous cell was a match.
                     if (d[i - 1, j - 1].isMatch)
                     {
                         gap *= 4;
                     }
                 }
-                // If the previous cell is a match, then we add a bonus 100 points to the score.
-                // This gives consecutive matches a higher score than non-consecutive matches.
-                // For gaps, we penalize new gaps more than linear gaps. We determine "new" gaps by checking if the previous cell is a match.
                 d[i, j].score = Math.Max(Math.Max(d[i - 1, j].score + gap, d[i, j - 1].score + gap), d[i - 1, j - 1].score + score);
             }
         }
