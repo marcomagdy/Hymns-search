@@ -30,8 +30,8 @@ class Program
             }
             Console.Clear();
 
-            // Open file and read each line
-            using (StreamReader reader = new StreamReader("hymns"))
+            string filename = args.Length > 1 ? args[1] : "hymns";
+            using (StreamReader reader = new StreamReader(filename))
             {
                 List<string> lines = new List<string>();
                 string? line;
@@ -48,10 +48,13 @@ class Program
                 // Print out the similar lines
                 if (similarLines.Any())
                 {
+                    var topScore = similarLines[0].score;
                     Console.WriteLine($"Top 5 matches for {searchTerm}:");
                     foreach (var similarLine in similarLines)
                     {
-                        Console.WriteLine($"{similarLine.line} --> Score: {similarLine.score}");
+                        if (1.0 * similarLine.score/topScore > 0.7) {
+                            Console.WriteLine($"{similarLine.line} --> Score: {similarLine.score}");
+                        }
                     }
                     Console.WriteLine($"Found similar lines in {watch.ElapsedMilliseconds} ms.");
                 }
