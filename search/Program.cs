@@ -13,7 +13,7 @@ struct Result
 struct Cell
 {
     public int score;
-    public bool isMatch;
+    public int isMatch;
 }
 
 class Program
@@ -78,38 +78,38 @@ class Program
         return similarLines.OrderByDescending(x => x.score).Take(10).ToList();
     }
 
-    static int CalculateNeedlemanWunschScore(string s, string t)
+    static int CalculateNeedlemanWunschScore(string needle, string haystack)
     {
-        Cell[] lastRow = new Cell[t.Length + 1];
-        Cell[] currentRow = new Cell[t.Length + 1];
+        Cell[] lastRow = new Cell[haystack.Length + 1];
+        Cell[] currentRow = new Cell[haystack.Length + 1];
         lastRow[0].score = 0;
-        lastRow[0].isMatch = false;
+        lastRow[0].isMatch = 0;
 
-        for (int i = 1; i <= t.Length; i++)
+        var threshold = needle.Length / 2 * 5;
+        var midpoint = needle.Length / 2 + 1;
+
+        for (int i = 1; i <= haystack.Length; i++)
         {
             lastRow[i].score = lastRow[i - 1].score - 1;
-            lastRow[i].isMatch = false;
+            lastRow[i].isMatch = 0;
         }
 
-        for (int i = 1; i <= s.Length; i++)
+        for (int i = 1; i <= needle.Length; i++)
         {
             currentRow[0].score = lastRow[0].score - 1;
-            currentRow[0].isMatch = false;
-            for (int j = 1; j <= t.Length; j++)
+            currentRow[0].isMatch = 0;
+            for (int j = 1; j <= haystack.Length; j++)
             {
                 int score = 0;
                 int gap = -1;
-                if (s[i - 1] == t[j - 1])
+                if (needle[i - 1] == haystack[j - 1])
                 {
-                    currentRow[j].isMatch = true;
-                    var isBoundary = j > 1 && (t[j - 2] == ' ' || t[j - 2] == ',');
+                    currentRow[j].isMatch = 100;
+                    var isBoundary = j > 1 && (haystack[j - 2] == ' ' || haystack[j - 2] == ',');
                     score = 5;
                     // If the previous cell was a match, then we add a bonus 100 points to the score.
                     // This gives consecutive matches a higher score than non-consecutive matches.
-                    if (lastRow[j - 1].isMatch)
-                    {
-                        score += 100;
-                    }
+                    score += lastRow[j - 1].isMatch;
                     if (isBoundary)
                     {
                         score += 25;
@@ -117,12 +117,12 @@ class Program
                 }
                 else
                 {
-                    currentRow[j].isMatch = false;
+                    currentRow[j].isMatch = 0;
                     // Penalize new gaps more than single linear gaps.
                     // We determine "new" gaps by checking if the previous cell was a match.
-                    if (lastRow[j - 1].isMatch)
+                    if (lastRow[j - 1].isMatch > 0)
                     {
-                        gap = -10;
+                        gap = -5;
                     }
                 }
                 currentRow[j].score = Math.Max(Math.Max(currentRow[j - 1].score + gap, lastRow[j].score + gap), lastRow[j - 1].score + score);
@@ -130,8 +130,12 @@ class Program
             Cell[] temp = lastRow;
             lastRow = currentRow;
             currentRow = temp;
+            if (i > midpoint && lastRow[haystack.Length].score < threshold)
+            {
+                return lastRow[haystack.Length].score;
+            }
         }
-        return lastRow[t.Length].score;
+        return lastRow[haystack.Length].score;
     }
 }
 
