@@ -75,52 +75,63 @@ class Program
             similarLines.Add(new Result { line = lines[i], score = distance });
         }
         // Select Top 5 results
-        return similarLines.OrderByDescending(x => x.score).Take(5).ToList();
+        return similarLines.OrderByDescending(x => x.score).Take(10).ToList();
     }
 
     static int CalculateNeedlemanWunschScore(string s, string t)
     {
-        Cell[,] d = new Cell[s.Length + 1, t.Length + 1];
-        d[0, 0].score = 0;
+        Cell[] lastRow = new Cell[t.Length + 1];
+        Cell[] currentRow = new Cell[t.Length + 1];
+        lastRow[0].score = 0;
+        lastRow[0].isMatch = false;
+
+        for (int i = 1; i <= t.Length; i++)
+        {
+            lastRow[i].score = lastRow[i - 1].score - 1;
+            lastRow[i].isMatch = false;
+        }
+
         for (int i = 1; i <= s.Length; i++)
         {
-            d[i, 0].score = d[i - 1, 0].score - 1;
-        }
-        for (int j = 1; j <= t.Length; j++)
-        {
-            d[0, j].score = d[0, j - 1].score - 1;
-        }
-        for (int i = 1; i <= s.Length; i++)
-        {
+            currentRow[0].score = lastRow[0].score - 1;
+            currentRow[0].isMatch = false;
             for (int j = 1; j <= t.Length; j++)
             {
                 int score = 0;
                 int gap = -1;
                 if (s[i - 1] == t[j - 1])
                 {
-                    d[i, j].isMatch = true;
+                    currentRow[j].isMatch = true;
+                    var isBoundary = j > 1 && (t[j - 2] == ' ' || t[j - 2] == ',');
                     score = 5;
                     // If the previous cell was a match, then we add a bonus 100 points to the score.
                     // This gives consecutive matches a higher score than non-consecutive matches.
-                    if (d[i - 1, j - 1].isMatch)
+                    if (lastRow[j - 1].isMatch)
                     {
                         score += 100;
+                    }
+                    if (isBoundary)
+                    {
+                        score += 25;
                     }
                 }
                 else
                 {
-                    d[i, j].isMatch = false;
+                    currentRow[j].isMatch = false;
                     // Penalize new gaps more than single linear gaps.
                     // We determine "new" gaps by checking if the previous cell was a match.
-                    if (d[i - 1, j - 1].isMatch)
+                    if (lastRow[j - 1].isMatch)
                     {
-                        gap *= 4;
+                        gap = -10;
                     }
                 }
-                d[i, j].score = Math.Max(Math.Max(d[i - 1, j].score + gap, d[i, j - 1].score + gap), d[i - 1, j - 1].score + score);
+                currentRow[j].score = Math.Max(Math.Max(currentRow[j - 1].score + gap, lastRow[j].score + gap), lastRow[j - 1].score + score);
             }
+            Cell[] temp = lastRow;
+            lastRow = currentRow;
+            currentRow = temp;
         }
-        return d[s.Length, t.Length].score;
+        return lastRow[t.Length].score;
     }
 }
 
