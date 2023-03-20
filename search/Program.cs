@@ -71,11 +71,54 @@ class Program
         var similarLines = new List<Result>();
         for (int i = 0; i < lines.Count; i++)
         {
-            int distance = CalculateNeedlemanWunschScore(searchTerm, lines[i].ToLower());
+            // int distance = CalculateNeedlemanWunschScore(searchTerm, lines[i].ToLower());
+            int distance = CalculateSmithWatermanScore(searchTerm, lines[i].ToLower());
             similarLines.Add(new Result { line = lines[i], score = distance });
         }
         // Select Top 5 results
         return similarLines.OrderByDescending(x => x.score).Take(10).ToList();
+    }
+
+    static int CalculateSmithWatermanScore(string needle, string haystack)
+    {
+        Cell[] lastRow = new Cell[haystack.Length + 1];
+        Cell[] currentRow = new Cell[haystack.Length + 1];
+
+        int maxScore = 0;
+
+        for (int i = 1; i <= needle.Length; i++)
+        {
+            for (int j = 1; j <= haystack.Length; j++)
+            {
+                int score = 0;
+                int gap = -1;
+                if (needle[i - 1] == haystack[j - 1])
+                {
+                    currentRow[j].isMatch = 2;
+                    // If the previous cell was a match, then we add a bonus 100 points to the score.
+                    // This gives consecutive matches a higher score than non-consecutive matches.
+                    score += 1 + lastRow[j - 1].isMatch;
+                }
+                else
+                {
+                    currentRow[j].isMatch = 0;
+                }
+                score = Math.Max(Math.Max(currentRow[j - 1].score + gap, lastRow[j].score + gap), lastRow[j - 1].score + score);
+                if (score < 0)
+                {
+                    score = 0;
+                }
+                else if (score > maxScore)
+                {
+                    maxScore = score;
+                }
+                currentRow[j].score = score;
+            }
+            Cell[] temp = lastRow;
+            lastRow = currentRow;
+            currentRow = temp;
+        }
+        return maxScore;
     }
 
     static int CalculateNeedlemanWunschScore(string needle, string haystack)
@@ -84,9 +127,6 @@ class Program
         Cell[] currentRow = new Cell[haystack.Length + 1];
         lastRow[0].score = 0;
         lastRow[0].isMatch = 0;
-
-        var threshold = needle.Length / 2 * 5;
-        var midpoint = needle.Length / 2 + 1;
 
         for (int i = 1; i <= haystack.Length; i++)
         {
@@ -105,15 +145,10 @@ class Program
                 if (needle[i - 1] == haystack[j - 1])
                 {
                     currentRow[j].isMatch = 100;
-                    var isBoundary = j > 1 && (haystack[j - 2] == ' ' || haystack[j - 2] == ',');
-                    score = 5;
+                    score = 10;
                     // If the previous cell was a match, then we add a bonus 100 points to the score.
                     // This gives consecutive matches a higher score than non-consecutive matches.
                     score += lastRow[j - 1].isMatch;
-                    if (isBoundary)
-                    {
-                        score += 25;
-                    }
                 }
                 else
                 {
@@ -130,10 +165,6 @@ class Program
             Cell[] temp = lastRow;
             lastRow = currentRow;
             currentRow = temp;
-            if (i > midpoint && lastRow[haystack.Length].score < threshold)
-            {
-                return lastRow[haystack.Length].score;
-            }
         }
         return lastRow[haystack.Length].score;
     }
