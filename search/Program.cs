@@ -79,6 +79,20 @@ class Program
         return similarLines.OrderByDescending(x => x.score).Take(10).ToList();
     }
 
+    private static int Max(int a, int b, int c)
+    {
+        int result = a;
+        if (b > result)
+        {
+            result = b;
+        }
+        if (c > result)
+        {
+            result = c;
+        }
+        return result;
+    }
+
     static int CalculateSmithWatermanScore(string needle, string haystack)
     {
         Cell[] lastRow = new Cell[haystack.Length + 1];
@@ -103,7 +117,7 @@ class Program
                 {
                     currentRow[j].isMatch = 0;
                 }
-                score = Math.Max(Math.Max(currentRow[j - 1].score + gap, lastRow[j].score + gap), lastRow[j - 1].score + score);
+                score = Max(currentRow[j - 1].score + gap, lastRow[j].score + gap, lastRow[j - 1].score + score);
                 if (score < 0)
                 {
                     score = 0;
