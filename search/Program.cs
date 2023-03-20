@@ -95,21 +95,21 @@ class Program
 
     static int CalculateSmithWatermanScore(string needle, string haystack)
     {
-        Cell[] lastRow = new Cell[haystack.Length + 1];
-        Cell[] currentRow = new Cell[haystack.Length + 1];
+        Cell[] lastRow = new Cell[needle.Length + 1];
+        Cell[] currentRow = new Cell[needle.Length + 1];
 
         int maxScore = 0;
 
-        for (int i = 1; i <= needle.Length; i++)
+        for (int i = 1; i <= haystack.Length; i++)
         {
-            for (int j = 1; j <= haystack.Length; j++)
+            for (int j = 1; j <= needle.Length; j++)
             {
                 int score = 0;
                 int gap = -1;
-                if (needle[i - 1] == haystack[j - 1])
+                if (needle[j - 1] == haystack[i - 1])
                 {
                     currentRow[j].isMatch = 2;
-                    // If the previous cell was a match, then we add a bonus 100 points to the score.
+                    // If the previous cell was a match, then we add a bonus points to the score.
                     // This gives consecutive matches a higher score than non-consecutive matches.
                     score += 1 + lastRow[j - 1].isMatch;
                 }
